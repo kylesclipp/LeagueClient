@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Champion Select Control</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { margin: 5px; padding: 10px; }
+        #championSelect { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Champion Select Control</h1>
+    <button onclick="getChampionSelect()">Refresh Champion Select</button>
+    <div id="championSelect"></div>
+
+    <script>
+        const API_URL = '';  // Empty string because we're serving from the same origin
+
+        async function getChampionSelect() {
+            const response = await fetch(`${API_URL}/champion-select`);
+            const data = await response.json();
+            displayChampionSelect(data);
+        }
+
+        function displayChampionSelect(data) {
+            const container = document.getElementById('championSelect');
+            container.innerHTML = '<h2>Champion Select</h2>';
+
+            if (data.actions) {
+                data.actions.flat().forEach(action => {
+                    if (action.actorCellId === data.localPlayerCellId) {
+                        const button = document.createElement('button');
+                        button.textContent = action.type === 'pick' ? 'Pick Champion' : 'Ban Champion';
+                        button.onclick = () => promptChampionAction(action.type, action.id);
+                        container.appendChild(button);
+                    }
+                });
+            }
+
+            container.appendChild(document.createElement('pre')).textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function promptChampionAction(type, actionId) {
+            const championId = prompt(`Enter champion ID to ${type}:`);
+            if (championId) {
+                const endpoint = type === 'pick' ? 'pick-champion' : 'ban-champion';
+                const response = await fetch(`${API_URL}/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ championId: parseInt(championId), actionId })
+                });
+                const result = await response.json();
+                alert(`Champion ${type} result: ${JSON.stringify(result)}`);
+                getChampionSelect();
+            }
+        }
+
+        getChampionSelect();
+    </script>
+</body>
+</html>
